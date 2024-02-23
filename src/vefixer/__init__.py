@@ -9,6 +9,9 @@ installation.
 """
 
 import argparse
+import os
+from pathlib import Path
+from typing import Sequence
 
 __version__ = "0.1.0"
 
@@ -21,6 +24,7 @@ def process_args(args):
     argparser.add_argument(
         "directories",
         nargs="*",
+        type=Path,
         help="The directories to search recursively for Python Virtual Environments (default: %(default)s).",
         default=["."],
     )
@@ -31,7 +35,27 @@ def process_args(args):
     return argparser.parse_args(args)
 
 
+def find_virtual_environments(directories: Sequence[Path]):
+    """Find all virtual environments in the directory recursively.
+    
+    Return as generator.
+    """
+    while directories:
+        top = directories.pop()
+        for p in top.iterdir():
+            # print(p)
+            if p.is_dir():
+                directories.append(p)
+            elif p.name == "python" and p.is_symlink() and p.parent.name == "bin":
+                yield p.parent.parent, p.resolve()
+
+
 def main(args=None):
     """The main entry point for the command-line interface."""
     args = process_args(args)
-    print(args)
+    for virtual_environment, symlink in find_virtual_environments(args.directories):
+        print(virtual_environment, symlink)
+
+
+if __name__ == "__main__":
+    main()

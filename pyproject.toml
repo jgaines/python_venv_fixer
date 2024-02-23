@@ -19,3 +19,9 @@ build-backend = "pdm.backend"
 
 [tool.pdm]
 distribution = true
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "ipykernel>=6.29.2",
+    "ipython>=8.22.1",
+]
