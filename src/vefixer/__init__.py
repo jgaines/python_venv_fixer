@@ -18,13 +18,15 @@ from typing import Sequence
 __version__ = "0.1.0"
 default_ignore = [
     ".git",
-    ".tox",
     ".idea",
     ".local",
     ".pdm-build",
+    ".pex",
     ".pyenv",
     ".pytest_cache",
     ".ruff_cache",
+    ".rye",
+    ".tox",
     "__pycache__",
     "dist",
     "pipx",
@@ -111,6 +113,41 @@ def extract_python_version(symlink: Path):
             return symlink.parts[i + 1]
 
 
+def find_requirements_file(directory: Path):
+    """Find the requirements file in the directory."""
+
+    def search_in(directory: Path):
+        # Quick sanity check to make sure directory exists and is a directory.
+        if not directory.is_dir():
+            return None
+
+        # First look at files in the directory.
+        # This check is pretty generic and will work for many projects in the wild.
+        found_docker_directory = False
+        for p in directory.iterdir():
+            if p.name == "requirements.txt":
+                return p
+            elif p.name == "docker":
+                found_docker_directory = True
+        # The following checks are more specific to my use case.
+        # Then look to see if there is a requirements file in a docker directory.
+        if found_docker_directory and (p := search_in(directory / "docker")):
+            return p
+
+    if p := search_in(directory):
+        return p
+    # The following checks are more specific to my use case.
+    # if we're in the administrator branch, look for the corresponding eng-tools project.
+    if directory.parent.name == "administrator":
+        if p := search_in(directory.parent.with_name("eng-tools") / directory.name):
+            return p
+    # if we're in the eng-tools branch, look for the corresponding administrator project.
+    if directory.parent.name == "eng-tools":
+        if p := search_in(directory.parent.with_name("administrator") / directory.name):
+            return p
+    return None
+
+
 def change_dir(path: Path, dry_run: bool, verbose: int = 0):
     """Change to the specified directory."""
     if dry_run:
@@ -150,6 +187,7 @@ def fix_virtual_environment(
     debug: bool = False,
 ):
     """Fix the virtual environment to use the new manager."""
+    print("--------------------")
     python_version = extract_python_version(symlink)
     # execute target manager to get the path to the python executable
     # mise exec python@3.10.7 -- python -c 'import sys; print(sys.executable)'
@@ -239,13 +277,14 @@ def fix_virtual_environment(
             change_dir(virtual_environment.parent, dry_run, verbose)
             if not run_command(["pdm", "install"], dry_run, verbose, debug):
                 return
-        elif "requirements.txt" in parent_files:
-            print(
-                f"Found requirements.txt in {virtual_environment.parent} using pip to restore packages."
-            )
+        elif requirements_file := find_requirements_file(virtual_environment.parent):
+            print(f"Found {requirements_file} using pip to restore packages.")
             change_dir(virtual_environment.parent, dry_run, verbose)
             if not run_command(
-                ["pip", "install", "-r", "requirements.txt"], dry_run, verbose, debug
+                ["pip", "install", "-r", str(requirements_file)],
+                dry_run,
+                verbose,
+                debug,
             ):
                 return
         else:
