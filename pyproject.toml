@@ -1,17 +1,18 @@
 [project]
-name = "vefixer"
-version = "0.1.0"
+name = "python_venv_fixer"
 description = "Find all Python virtualenvs and fix them up to use current virtualenv manager."
+# https://backend.pdm-project.org/metadata/#dynamic-project-version
+dynamic = ["version"]
 authors = [
     {name = "John Gaines", email = "me@jgaines.com"},
 ]
 dependencies = []
-requires-python = ">=3.12"
+requires-python = "==3.12.*"
 readme = "README.md"
 license = {text = "MIT"}
 
 [project.scripts]
-vefixer = "vefixer.__init__:main"
+pyvenvfixer = "pyvenvfixer.__init__:main"
 
 [build-system]
 requires = ["pdm-backend"]
@@ -19,6 +20,10 @@ build-backend = "pdm.backend"
 
 [tool.pdm]
 distribution = true
+
+[tool.pdm.version]
+source = "file"
+path = "src/pyvenvfixer/__init__.py"
 
 [tool.pdm.dev-dependencies]
 dev = [

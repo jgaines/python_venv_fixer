@@ -15,7 +15,7 @@ from pathlib import Path
 import subprocess
 from typing import Sequence
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 default_ignore = [
     ".git",
     ".idea",

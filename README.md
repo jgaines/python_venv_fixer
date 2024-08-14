@@ -1,4 +1,4 @@
-# vefixer (WIP)
+# Python Virtual Environment Fixer (WIP)
 
 Find and migrate Python virtual environments to a new manager.
 
